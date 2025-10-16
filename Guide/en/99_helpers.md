@@ -1,0 +1,304 @@
+# Helpers
+
+Simplifying display and content manipulation
+
+Blackcube provides helpers to simplify content display and manipulation in your views. These helpers extend Yii2 functionalities with CMS-specific features.
+
+Concretely, three helpers are available: Element to retrieve and filter content blocs, Html to manage uploaded images and files, and Quill to clean WYSIWYG HTML. These helpers automate repetitive tasks and guarantee rendering consistency.
+
+## Element Helper
+
+The **Element** helper allows retrieving and filtering an element's blocs with automatic cache.
+
+### Namespace
+
+```php
+use blackcube\core\web\helpers\Element;
+```
+
+### Element::getDateCreate()
+
+Retrieves the actual creation date of an element taking blocs into account.
+
+```php
+Element::getDateCreate(ElementInterface $element): DateTime
+```
+
+**Behavior:**
+
+Returns `MIN(dateCreate)` between element and its blocs. If a bloc was created before the element, it's the bloc's date that is returned.
+
+**Example:**
+
+```php
+$realDateCreate = Element::getDateCreate($composite);
+echo $realDateCreate->format('d/m/Y H:i');
+```
+
+### Element::getDateUpdate()
+
+Retrieves the actual modification date of an element taking blocs into account.
+
+```php
+Element::getDateUpdate(ElementInterface $element): DateTime
+```
+
+**Behavior:**
+
+Returns `MAX(dateUpdate)` between element and its blocs. If a bloc was modified after the element, it's the bloc's date that is returned.
+
+**Example:**
+
+```php
+$realDateUpdate = Element::getDateUpdate($composite);
+echo $realDateUpdate->format('d/m/Y H:i');
+```
+
+### Element::getWithTypes()
+
+Retrieves an element's blocs for specific types.
+
+```php
+Element::getWithTypes(ElementInterface $element, array $selectedBlocTypeIds): Bloc[]
+```
+
+**Example:**
+
+```php
+use app\helpers\Parameters;
+
+// Retrieve only content blocs
+$contentBlocs = Element::getWithTypes($composite, [
+    Parameters::get('BLOC', 'CONTENT'),
+    Parameters::get('BLOC', 'CODE'),
+    Parameters::get('BLOC', 'INFO')
+]);
+
+foreach ($contentBlocs as $bloc) {
+    echo Quill::cleanHtml($bloc->content);
+}
+```
+
+### Element::getExceptTypes()
+
+Retrieves an element's blocs except certain types.
+
+```php
+Element::getExceptTypes(ElementInterface $element, array $exceptBlocTypeIds): Bloc[]
+```
+
+**Example:**
+
+```php
+// Retrieve all blocs except hero
+$otherBlocs = Element::getExceptTypes($composite, [
+    Parameters::get('BLOC', 'HERO')
+]);
+```
+
+### Element::getFirstWithType()
+
+Retrieves the first bloc of a specific type.
+
+```php
+Element::getFirstWithType(ElementInterface $element, int $blocTypeId): ?Bloc
+```
+
+**Example:**
+
+```php
+// Retrieve hero
+$heroBloc = Element::getFirstWithType(
+    $composite, 
+    Parameters::get('BLOC', 'HERO')
+);
+
+if ($heroBloc !== null) {
+    echo $heroBloc->title;
+}
+```
+
+> **Info**
+>
+> All Element helper methods use memory cache to avoid repeated SQL queries during the same HTTP request.
+
+## Html Helper
+
+The **Html** helper extends **yii\helpers\Html** and adds functionalities to manage uploaded images and files in Blackcube.
+
+### Namespace
+
+```php
+use blackcube\core\helpers\Html;
+```
+
+### Html::cacheImage()
+
+Caches and automatically resizes an image.
+
+```php
+Html::cacheImage(string $imageLink, ?int $width = null, ?int $height = null): string
+```
+
+> **Warning**
+> Images uploaded in Blackcube are stored with a Flysystem prefix (`@blackcubefs/...`) that cannot be used directly in an `<img>` tag. The helper:
+> 1. Resolves Flysystem path (local/S3/etc.)
+> 2. Resizes if necessary
+> 3. Caches in `/cache/`
+> 4. Returns public URL
+
+**Example:**
+
+```php
+<?php if (!empty($bloc->image)): ?>
+    <?php echo Html::img(Html::cacheImage($bloc->image, 600), [
+        'alt' => $bloc->imageAlt ?? ''
+    ]); ?>
+<?php endif; ?>
+```
+
+**Behavior according to dimensions:**
+
+1. Width AND height: Resize with crop
+2. Width alone: Resize proportionally
+3. Height alone: Resize proportionally
+4. No dimension: Copy without resizing
+
+### Html::cacheFile()
+
+Caches a file (PDF, documents) for display.
+
+```php
+Html::cacheFile(string $fileLink): string
+```
+
+> **Warning**
+> Files uploaded in Blackcube are stored with a Flysystem prefix (`@blackcubefs/...`) that cannot be used directly in a link. The helper:
+> 1. Resolves Flysystem path (local/S3/etc.)
+> 2. Caches in `/cache/`
+> 3. Returns public URL
+
+**Example:**
+
+```php
+<?php if (!empty($bloc->document)): ?>
+    <?php echo Html::a('Download PDF', Html::cacheFile($bloc->document), [
+        'target' => '_blank'
+    ]); ?>
+<?php endif; ?>
+```
+
+### Html::img()
+
+Overrides **yii\helpers\Html::img()** with automatic **cacheImage()** support.
+
+```php
+Html::img(string|array $src, array $options = []): string
+```
+
+If **$options['width']** and/or **$options['height']** are defined, automatically calls **cacheImage()** with these dimensions.
+
+## Quill Helper
+
+The **Quill** helper allows cleaning and manipulating HTML generated by Quill.js editor (default WYSIWYG format in Blackcube).
+
+### Namespace
+
+```php
+use blackcube\core\helpers\Quill;
+```
+
+### Quill::cleanHtml()
+
+Cleans HTML generated by Quill by removing unwanted elements.
+
+```php
+Quill::cleanHtml(
+    ?string $htmlContent, 
+    bool $removeStyles = true, 
+    bool $removeEmptyTags = true, 
+    bool $removeSpan = true, 
+    bool $addNoFollow = true
+): ?string
+```
+
+> **Info**
+> This helper was developed to guarantee RGAA compliance of content generated by the WYSIWYG editor.
+
+**What is cleaned by default:**
+
+1. `style` attributes
+2. Empty tags (`<p></p>`, `<p><br></p>`)
+3. `<span>` tags (content preserved)
+4. Add `rel="nofollow"` to external links
+
+**Example:**
+
+```php
+<?php if (!empty($bloc->content)): ?>
+    <div class="content">
+        <?php echo Quill::cleanHtml($bloc->content); ?>
+    </div>
+<?php endif; ?>
+```
+
+### Quill::toRaw()
+
+Converts HTML to plain text keeping only certain tags.
+
+```php
+Quill::toRaw(?string $htmlContent, array $keepTags = ['p']): ?string
+```
+
+**Behavior:**
+
+1. First cleans HTML with **cleanHtml()**
+2. Removes all tags except those in **$keepTags**
+
+**Examples:**
+
+```php
+$html = '<p><strong>Text</strong> in <em>bold</em></p><p>Other paragraph</p>';
+
+// Keep <p>
+echo Quill::toRaw($html);
+// → <p>Text in bold</p><p>Other paragraph</p>
+
+// Remove everything
+echo Quill::toRaw($html, []);
+// → Text in boldOther paragraph
+
+// Keep <p> and <strong>
+echo Quill::toRaw($html, ['p', 'strong']);
+// → <p><strong>Text</strong> in bold</p><p>Other paragraph</p>
+```
+
+**Use cases:**
+
+```php
+// Meta description (pure text)
+$description = Quill::toRaw($bloc->content, []);
+$description = mb_substr($description, 0, 160);
+
+// Accessible excerpt (keep paragraphs)
+$excerpt = Quill::toRaw($bloc->content);
+
+// RSS feed (text with minimal formatting)
+$rssContent = Quill::toRaw($bloc->content, ['p', 'br', 'strong', 'em']);
+```
+
+## Best Practices
+
+1. **Always use Html::cacheImage()** to display uploaded images
+2. **Always use Html::cacheFile()** to display uploaded files
+3. **Always use Quill::cleanHtml()** for WYSIWYG content
+
+## Key Points to Remember
+
+1. **Element Helper**: Bloc retrieval and filtering with automatic cache
+2. **Html Helper**: Flysystem file management, automatic cache and resizing
+3. **Quill Helper**: RGAA HTML cleaning, plain text conversion
+
+> **Info**
+>
+> Blackcube helpers automate repetitive tasks and guarantee rendering consistency. They handle cache, security and accessibility automatically.
