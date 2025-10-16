@@ -42,10 +42,10 @@ English table of contents
 - [Documentation Pages](Demo/en/09_documentation-pages.md)
 - [Contact Page](Demo/en/10_contact-page.md)
 - [Back Office Setup](Demo/en/11_back-office-setup.md)
-- [Nodes Content](Demo/en/12_nodes-content.md)
-- [Contact Content](Demo/en/13_contact-content.md)
-- [Documentation Content](Demo/en/14_documentation-content.md)
-- [Home Content](Demo/en/15_home-content.md)
+- [Nodes ontent](Demo/en/12_nodes-content.md)
+- [Contact page content](Demo/en/13_contact-content.md)
+- [Documentation pages content](Demo/en/14_documentation-content.md)
+- [Home page content](Demo/en/15_home-content.md)
 
 
 French table of contents
@@ -65,3 +65,22 @@ French table of contents
 - [Cache](Guide/fr/09_cache.md)
 - [Paramètres](Guide/fr/10_parameters.md)
 - [Helpers](Guide/fr/99_helpers.md)
+
+### Le Projet Démo
+
+- [Définition du projet](Demo/fr/00_project-definition.md)
+- [Analyse du design](Demo/fr/01_design-analysis.md)
+- [Initialisation du projet](Demo/fr/02_project-init.md)
+- [Découpage logique](Demo/fr/03_logical-breakdown.md)
+- [Préparatin des Types](Demo/fr/04_types-planning.md)
+- [Préparatin des BlocTypes](Demo/fr/05_bloctypes-planning.md)
+- [Fondations communes](Demo/fr/06_common-foundations.md)
+- [Pages de redirection](Demo/fr/07_redirect-pages.md)
+- [Page d'accueil](Demo/fr/08_home-page.md)
+- [Pages de documentation](Demo/fr/09_documentation-pages.md)
+- [Page de contact](Demo/fr/10_contact-page.md)
+- [Configuration du back-office](Demo/fr/11_back-office-setup.md)
+- [Contenu des rubriques](Demo/fr/12_nodes-content.md)
+- [Contenu de la page contact](Demo/fr/13_contact-content.md)
+- [Contenu des pages documentation](Demo/fr/14_documentation-content.md)
+- [Contenu de la page d'accueil](Demo/fr/15_home-content.md)
